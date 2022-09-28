@@ -29,6 +29,7 @@ const App: FC = () => {
       } else {
         // authUser の値がfalsy ならログアウトした場合なので、logout をdispatch
         dispatch(logout());
+        setIsSignIn(false);
       }
     });
 

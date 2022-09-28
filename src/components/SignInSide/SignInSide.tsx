@@ -11,14 +11,19 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Typography from '@mui/material/Typography';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 
+import { styled } from '@mui/material/styles';
+
 import styles from './SignInSide.module.css'
 import { auth, googleAuthProvider, storage } from '../../firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, updateProfile } from 'firebase/auth';
-import { InputAdornment } from '@mui/material';
+import { createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, updateProfile } from 'firebase/auth';
+import { IconButton, InputAdornment, Modal } from '@mui/material';
 import { EmailOutlined, PasswordOutlined } from '@mui/icons-material';
+import PersonIcon from '@mui/icons-material/Person';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { updateUserProfile } from '../../features/userSlice';
 import { useDispatch } from 'react-redux';
+import ResetPassWordModal from '../ResetPasswordModal/ResetPasswordModal';
 
 const Copyright: React.FC<any> = (props: any) => {
 	return (
@@ -35,7 +40,6 @@ const Copyright: React.FC<any> = (props: any) => {
 
 const theme = createTheme();
 
-
 interface props {
 	isSignIn: boolean,
 	setIsSignIn: React.Dispatch<React.SetStateAction<boolean>>
@@ -45,7 +49,7 @@ const generateRandomFilePath = (fileName: string) => {
 	const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 	const length = 16;
 	const randChars = Array.from(crypto.getRandomValues(new Uint32Array(length))) // 32bit 符号なし整数の要素を16個ランダムにとる配列を作る
-		.map(n => chars[n % SignInSide.length]) // 乱数配列を順番に処理し、char配列のいずれかの文字を取り出した配列を生成
+		.map(n => chars[n % chars.length]) // 乱数配列を順番に処理し、char配列のいずれかの文字を取り出した配列を生成
 		.join(''); // 配列を文字列に結合する
 	return `${randChars}_${fileName}`;
 }
@@ -58,6 +62,8 @@ const SignInSide: FC<props> = ({ isSignIn, setIsSignIn }: props) => {
 	const [password, setPassword] = useState('');
 	const [userName, setUserName] = useState('');
 	const [avatarImage, setAvatarImage] = useState<File | null>(null);
+	const [openModal, setOpenModal] = useState(false);
+	const [resetPasswordMailTo, setResetPasswordMailTo] = useState('');
 
 	const signInEmail = async () => {
 		await signInWithEmailAndPassword(auth, email, password);
@@ -158,6 +164,31 @@ const SignInSide: FC<props> = ({ isSignIn, setIsSignIn }: props) => {
 							{isSignIn ? 'Sign in' : 'Register'}
 						</Typography>
 						<Box component="form" noValidate onSubmit={(e) => handleSubmit(e)} sx={{ mt: 1 }}>
+
+							{isRegisterMode ?
+								<TextField
+									InputProps={{
+										startAdornment: (
+											<InputAdornment position="start">
+												<PersonIcon />
+											</InputAdornment>
+										),
+									}}
+									margin="normal"
+									required
+									fullWidth
+									id="username"
+									label="User name"
+									name="username"
+									autoComplete="username"
+									autoFocus
+									value={userName}
+									onChange={e => setUserName(e.target.value)}
+								>
+
+								</TextField> :
+								<></>
+							}
 							<TextField
 								InputProps={{
 									startAdornment: (
@@ -196,7 +227,38 @@ const SignInSide: FC<props> = ({ isSignIn, setIsSignIn }: props) => {
 								value={password}
 								onChange={e => setPassword(e.target.value)}
 							/>
+
+							{isRegisterMode ?
+								<Box textAlign='center'>
+									<IconButton>
+										<label>
+											<AccountCircleIcon
+												fontSize='large'
+												className={avatarImage ?
+													styles.login_addIconLoaded
+													:
+													styles.login_addIcon
+												}
+											/>
+											<input
+												className={styles.login_hiddenIcon}
+												type="file"
+												onChange={onChangeImageHandler}
+											/>
+										</label>
+									</IconButton>
+								</Box>
+								:
+								<></>
+							}
+
 							<Button
+								disabled={
+									isRegisterMode ?
+										!userName || !email || password.length < 6 || !avatarImage
+										:
+										!email || password.length < 6
+								}
 								type="submit"
 								fullWidth
 								variant="contained"
@@ -210,6 +272,7 @@ const SignInSide: FC<props> = ({ isSignIn, setIsSignIn }: props) => {
 								<Grid item xs>
 									<span
 										className={styles.login_reset}
+										onClick={() => { setOpenModal(true) }}
 									>
 										Forgot Password?
 									</span>
@@ -239,6 +302,12 @@ const SignInSide: FC<props> = ({ isSignIn, setIsSignIn }: props) => {
 
 						</Box>
 					</Box>
+					<ResetPassWordModal
+						open={openModal}
+						setOpen={setOpenModal}
+						resetPasswordMailTo={resetPasswordMailTo}
+						setResetPasswordMailTo={setResetPasswordMailTo}
+					/>
 				</Grid>
 			</Grid>
 		</ThemeProvider>
