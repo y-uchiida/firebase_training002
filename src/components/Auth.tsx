@@ -1,7 +1,8 @@
 import React from 'react'
+import SignInSide from './SignInSide/SignInSide'
 
 export const Auth = () => {
 	return (
-		<div>Auth</div>
+		<SignInSide />
 	)
 }
