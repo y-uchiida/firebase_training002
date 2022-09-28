@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { FC, useEffect, useState } from 'react'
 import styles from './App.module.css'
 import { useSelector, useDispatch } from "react-redux";
 import { selectUser, login, logout } from "./features/userSlice";
@@ -7,9 +7,11 @@ import { Feed } from './components/Feed';
 import { Auth } from './components/Auth';
 import CssBaseline from '@mui/material/CssBaseline'
 
-const App: React.FC = () => {
+const App: FC = () => {
   const user = useSelector(selectUser);
   const dispatch = useDispatch();
+
+  const [isSignIn, setIsSignIn] = useState(true);
 
   /* userの状態が変化したときに実行される関数
    * firebase のログイン状態を監視し、ログイン時/ログアウト時にそれぞれ処理を実行する
@@ -42,11 +44,11 @@ const App: React.FC = () => {
       <CssBaseline />
 
       {/* ログインしている場合はFeed, そうでない場合はAuth のコンポーネントを表示する */}
-      {user.uid ?
+      {isSignIn ?
         <div className={styles.app}>
-          <Feed />
+          <Feed isSignIn={isSignIn} setIsSignIn={setIsSignIn} />
         </div> :
-        <Auth />
+        <Auth isSignIn={isSignIn} setIsSignIn={setIsSignIn} />
       }
     </>
   )

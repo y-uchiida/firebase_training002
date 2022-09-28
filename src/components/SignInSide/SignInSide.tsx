@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { FC, useState } from 'react';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -11,9 +11,12 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Typography from '@mui/material/Typography';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 
-import styles from './SignInSide.css'
+import styles from './SignInSide.module.css'
 import { auth, googleAuthProvider } from '../../firebase';
-import { signInWithPopup } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { InputAdornment } from '@mui/material';
+import { Email, EmailOutlined, EmailRounded, Mode, PasswordOutlined } from '@mui/icons-material';
+
 
 const Copyright: React.FC<any> = (props: any) => {
 	return (
@@ -30,20 +33,49 @@ const Copyright: React.FC<any> = (props: any) => {
 
 const theme = createTheme();
 
-const SignInSide: React.FC = () => {
+
+interface props {
+	isSignIn: boolean,
+	setIsSignIn: React.Dispatch<React.SetStateAction<boolean>>
+};
+
+const SignInSide: FC<props> = ({ isSignIn, setIsSignIn }: props) => {
+	const [isRegisterMode, setIsRegisterMode] = useState(false);
+
+	const [email, setEmail] = useState('');
+	const [password, setPassword] = useState('');
+
+	const signInEmail = async () => {
+		await signInWithEmailAndPassword(auth, email, password);
+		setIsSignIn(true);
+	};
+
+	const signUpEmail = async () => {
+		await createUserWithEmailAndPassword(auth, email, password);
+		setIsSignIn(true);
+	}
+
 	const signInGoogle = async () => {
 		const result = await signInWithPopup(auth, googleAuthProvider).catch(err => {
 			alert(err.message);
 		});
 		result
 	}
-	const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+	const handleSubmit = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent> | React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
-		const data = new FormData(event.currentTarget);
-		console.log({
-			email: data.get('email'),
-			password: data.get('password'),
-		});
+		// const data = new FormData(event.currentTarget);
+		// console.log({
+		// 	email: data.get('email'),
+		// 	password: data.get('password'),
+		// });
+		isRegisterMode ?
+			await signUpEmail().catch(err => {
+				alert(err.message)
+			})
+			:
+			await signInEmail().catch(err => {
+				alert(err.message)
+			})
 	};
 
 	return (
@@ -79,10 +111,17 @@ const SignInSide: React.FC = () => {
 							<LockOutlinedIcon />
 						</Avatar>
 						<Typography component="h1" variant="h5">
-							Sign in
+							{isSignIn ? 'Sign in' : 'Register'}
 						</Typography>
-						<Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 1 }}>
+						<Box component="form" noValidate onSubmit={(e) => handleSubmit(e)} sx={{ mt: 1 }}>
 							<TextField
+								InputProps={{
+									startAdornment: (
+										<InputAdornment position="start">
+											<EmailOutlined />
+										</InputAdornment>
+									),
+								}}
 								margin="normal"
 								required
 								fullWidth
@@ -91,8 +130,17 @@ const SignInSide: React.FC = () => {
 								name="email"
 								autoComplete="email"
 								autoFocus
+								value={email}
+								onChange={e => setEmail(e.target.value)}
 							/>
 							<TextField
+								InputProps={{
+									startAdornment: (
+										<InputAdornment position="start">
+											<PasswordOutlined />
+										</InputAdornment>
+									),
+								}}
 								margin="normal"
 								required
 								fullWidth
@@ -101,15 +149,40 @@ const SignInSide: React.FC = () => {
 								type="password"
 								id="password"
 								autoComplete="current-password"
+								value={password}
+								onChange={e => setPassword(e.target.value)}
 							/>
 							<Button
 								type="submit"
 								fullWidth
 								variant="contained"
 								sx={{ mt: 3, mb: 2 }}
+								onClick={(e) => handleSubmit(e)}
 							>
-								Sign In
+								{isRegisterMode ? 'Register' : 'Sign in'}
 							</Button>
+
+							<Grid container>
+								<Grid item xs>
+									<span
+										className={styles.login_reset}
+									>
+										Forgot Password?
+									</span>
+								</Grid>
+								<Grid item xs>
+									<span
+										className={styles.login_toggleMode}
+										onClick={() => setIsRegisterMode(!isRegisterMode)}
+									>
+										{isRegisterMode ?
+											'Back to sign in' :
+											'Create new account ?'
+										}
+									</span>
+								</Grid>
+							</Grid>
+
 							<Button
 								type="button"
 								fullWidth

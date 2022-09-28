@@ -1,8 +1,14 @@
 import React from 'react'
+import { useState } from 'react';
 import SignInSide from './SignInSide/SignInSide'
 
-export const Auth = () => {
+interface props {
+	isSignIn: boolean,
+	setIsSignIn: React.Dispatch<React.SetStateAction<boolean>>
+};
+
+export const Auth = ({ isSignIn, setIsSignIn }: props) => {
 	return (
-		<SignInSide />
+		<SignInSide isSignIn={isSignIn} setIsSignIn={setIsSignIn} />
 	)
 }
