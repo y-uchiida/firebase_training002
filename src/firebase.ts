@@ -17,6 +17,7 @@ const firebaseConfig = {
 /* 設定したコンフィグのオブジェクトを読み込んで、firebaseを初期化する */
 const app = initializeApp(firebaseConfig);
 
+/* 初期化後、機能別にモジュール化されたオブジェクトをエクスポートする*/
 export const db = getFirestore();
 export const storage = getStorage();
 export const auth = getAuth();
