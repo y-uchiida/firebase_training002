@@ -5,6 +5,7 @@ import { selectUser, login, logout } from "./features/userSlice";
 import { auth } from "./firebase";
 import { Feed } from './components/Feed';
 import { Auth } from './components/Auth';
+import CssBaseline from '@mui/material/CssBaseline'
 
 const App: React.FC = () => {
   const user = useSelector(selectUser);
@@ -37,6 +38,9 @@ const App: React.FC = () => {
 
   return (
     <>
+      {/* MUIのリセットCSSを読み込み */}
+      <CssBaseline />
+
       {/* ログインしている場合はFeed, そうでない場合はAuth のコンポーネントを表示する */}
       {user.uid ?
         <div className={styles.app}>
