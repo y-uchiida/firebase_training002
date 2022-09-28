@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import React, { FC, useState } from 'react';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -12,11 +12,13 @@ import Typography from '@mui/material/Typography';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 
 import styles from './SignInSide.module.css'
-import { auth, googleAuthProvider } from '../../firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { auth, googleAuthProvider, storage } from '../../firebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, updateProfile } from 'firebase/auth';
 import { InputAdornment } from '@mui/material';
-import { Email, EmailOutlined, EmailRounded, Mode, PasswordOutlined } from '@mui/icons-material';
-
+import { EmailOutlined, PasswordOutlined } from '@mui/icons-material';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { updateUserProfile } from '../../features/userSlice';
+import { useDispatch } from 'react-redux';
 
 const Copyright: React.FC<any> = (props: any) => {
 	return (
@@ -39,11 +41,23 @@ interface props {
 	setIsSignIn: React.Dispatch<React.SetStateAction<boolean>>
 };
 
+const generateRandomFilePath = (fileName: string) => {
+	const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+	const length = 16;
+	const randChars = Array.from(crypto.getRandomValues(new Uint32Array(length))) // 32bit 符号なし整数の要素を16個ランダムにとる配列を作る
+		.map(n => chars[n % SignInSide.length]) // 乱数配列を順番に処理し、char配列のいずれかの文字を取り出した配列を生成
+		.join(''); // 配列を文字列に結合する
+	return `${randChars}_${fileName}`;
+}
+
 const SignInSide: FC<props> = ({ isSignIn, setIsSignIn }: props) => {
 	const [isRegisterMode, setIsRegisterMode] = useState(false);
+	const dispatch = useDispatch();
 
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
+	const [userName, setUserName] = useState('');
+	const [avatarImage, setAvatarImage] = useState<File | null>(null);
 
 	const signInEmail = async () => {
 		await signInWithEmailAndPassword(auth, email, password);
@@ -51,7 +65,30 @@ const SignInSide: FC<props> = ({ isSignIn, setIsSignIn }: props) => {
 	};
 
 	const signUpEmail = async () => {
-		await createUserWithEmailAndPassword(auth, email, password);
+		const user = await createUserWithEmailAndPassword(auth, email, password);
+		let url = '';
+		if (avatarImage) {
+			const fileName = generateRandomFilePath(avatarImage.name);
+			const avatarRef = await ref(storage, `avatars/${fileName}`);
+			await uploadBytes(avatarRef, avatarImage);
+			await getDownloadURL(avatarRef).then((downloadUrl) => {
+				url = downloadUrl
+			});
+		}
+		// firebase のユーザー情報を更新
+		await updateProfile(user.user, {
+			displayName: userName,
+			photoURL: url,
+		});
+
+		// redux 側でもユーザー情報を更新
+		dispatch(updateUserProfile({
+			uid: user.user.uid,
+			displayName: userName,
+			photoUrl: url,
+		}));
+
+		// すべての処理が終わったら、ログイン状態をtrueにする
 		setIsSignIn(true);
 	}
 
@@ -76,6 +113,13 @@ const SignInSide: FC<props> = ({ isSignIn, setIsSignIn }: props) => {
 			await signInEmail().catch(err => {
 				alert(err.message)
 			})
+	};
+
+	const onChangeImageHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
+		if (e.target.files![0]) {
+			setAvatarImage(e.target.files![0]);
+			e.target.value = '';
+		}
 	};
 
 	return (
@@ -170,7 +214,7 @@ const SignInSide: FC<props> = ({ isSignIn, setIsSignIn }: props) => {
 										Forgot Password?
 									</span>
 								</Grid>
-								<Grid item xs>
+								<Grid item>
 									<span
 										className={styles.login_toggleMode}
 										onClick={() => setIsRegisterMode(!isRegisterMode)}
