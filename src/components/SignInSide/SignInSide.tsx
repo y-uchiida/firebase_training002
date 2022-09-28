@@ -3,8 +3,6 @@ import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import CssBaseline from '@mui/material/CssBaseline';
 import TextField from '@mui/material/TextField';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
 import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
@@ -14,6 +12,8 @@ import Typography from '@mui/material/Typography';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 
 import styles from './SignInSide.css'
+import { auth, googleAuthProvider } from '../../firebase';
+import { signInWithPopup } from 'firebase/auth';
 
 const Copyright: React.FC<any> = (props: any) => {
 	return (
@@ -31,6 +31,12 @@ const Copyright: React.FC<any> = (props: any) => {
 const theme = createTheme();
 
 const SignInSide: React.FC = () => {
+	const signInGoogle = async () => {
+		const result = await signInWithPopup(auth, googleAuthProvider).catch(err => {
+			alert(err.message);
+		});
+		result
+	}
 	const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		const data = new FormData(event.currentTarget);
@@ -104,6 +110,16 @@ const SignInSide: React.FC = () => {
 							>
 								Sign In
 							</Button>
+							<Button
+								type="button"
+								fullWidth
+								variant="contained"
+								sx={{ mt: 3, mb: 2 }}
+								onClick={signInGoogle}
+							>
+								SignIn with Google
+							</Button>
+
 						</Box>
 					</Box>
 				</Grid>
