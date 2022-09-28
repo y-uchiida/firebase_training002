@@ -10,6 +10,7 @@ import Grid from '@mui/material/Grid';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Typography from '@mui/material/Typography';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
+import GoogleIcon from '@mui/icons-material/Google';
 
 import { styled } from '@mui/material/styles';
 
@@ -296,6 +297,7 @@ const SignInSide: FC<props> = ({ isSignIn, setIsSignIn }: props) => {
 								variant="contained"
 								sx={{ mt: 3, mb: 2 }}
 								onClick={signInGoogle}
+								startIcon={<GoogleIcon></GoogleIcon>}
 							>
 								SignIn with Google
 							</Button>
