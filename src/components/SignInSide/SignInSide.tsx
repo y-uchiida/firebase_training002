@@ -25,6 +25,7 @@ import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { updateUserProfile } from '../../features/userSlice';
 import { useDispatch } from 'react-redux';
 import ResetPassWordModal from '../ResetPasswordModal/ResetPasswordModal';
+import { generateRandomString } from '../../helpers/helper';
 
 const Copyright: React.FC<any> = (props: any) => {
 	return (
@@ -46,15 +47,6 @@ interface props {
 	setIsSignIn: React.Dispatch<React.SetStateAction<boolean>>
 };
 
-const generateRandomFilePath = (fileName: string) => {
-	const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-	const length = 16;
-	const randChars = Array.from(crypto.getRandomValues(new Uint32Array(length))) // 32bit 符号なし整数の要素を16個ランダムにとる配列を作る
-		.map(n => chars[n % chars.length]) // 乱数配列を順番に処理し、char配列のいずれかの文字を取り出した配列を生成
-		.join(''); // 配列を文字列に結合する
-	return `${randChars}_${fileName}`;
-}
-
 const SignInSide: FC<props> = ({ isSignIn, setIsSignIn }: props) => {
 	const [isRegisterMode, setIsRegisterMode] = useState(false);
 	const dispatch = useDispatch();
@@ -75,7 +67,7 @@ const SignInSide: FC<props> = ({ isSignIn, setIsSignIn }: props) => {
 		const user = await createUserWithEmailAndPassword(auth, email, password);
 		let url = '';
 		if (avatarImage) {
-			const fileName = generateRandomFilePath(avatarImage.name);
+			const fileName = generateRandomString() + '_' + avatarImage.name;
 			const avatarRef = await ref(storage, `avatars/${fileName}`);
 			await uploadBytes(avatarRef, avatarImage);
 			await getDownloadURL(avatarRef).then((downloadUrl) => {
@@ -103,7 +95,9 @@ const SignInSide: FC<props> = ({ isSignIn, setIsSignIn }: props) => {
 		const result = await signInWithPopup(auth, googleAuthProvider).catch(err => {
 			alert(err.message);
 		});
-		result
+
+		// すべての処理が終わったら、ログイン状態をtrueにする
+		setIsSignIn(true);
 	}
 	const handleSubmit = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent> | React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();

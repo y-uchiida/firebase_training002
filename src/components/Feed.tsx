@@ -1,6 +1,8 @@
 import { Button } from '@mui/material';
 import React from 'react'
 import { auth } from '../firebase';
+import { TweetInput } from './TweetInput/TweetInput';
+import styles from './Feed.module.css'
 
 interface props {
 	isSignIn: boolean,
@@ -9,22 +11,9 @@ interface props {
 
 export const Feed = ({ isSignIn, setIsSignIn }: props) => {
 
-	const signOutHandle = async () => {
-		await auth.signOut().catch(err => {
-			alert(err.message)
-		});
-		setIsSignIn(false);
-	};
-
 	return (
-		<>
-			<div>Feed</div>
-			<Button
-				type='button'
-				onClick={() => signOutHandle()}
-			>
-				SignOut
-			</Button>
-		</>
+		<div className={styles.feed}>
+			<TweetInput></TweetInput>
+		</div>
 	)
 }
