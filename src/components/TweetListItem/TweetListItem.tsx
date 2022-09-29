@@ -1,7 +1,7 @@
 import { Avatar, Button, TextField } from '@mui/material'
 import { Box } from '@mui/system'
-import { addDoc, collection, doc, serverTimestamp } from 'firebase/firestore'
-import React, { useState } from 'react'
+import { addDoc, collection, doc, onSnapshot, orderBy, query, serverTimestamp, Timestamp } from 'firebase/firestore'
+import React, { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { Tweet } from '../../@types/Tweet'
 import { selectUser } from '../../features/userSlice'
@@ -12,9 +12,37 @@ interface props {
 	tweet: Tweet
 };
 
+interface reply {
+	id: string,
+	avatar: string,
+	text: string,
+	timestamp: Timestamp | null,
+	username: string
+}
+
 export const TweetListItem = ({ tweet }: props) => {
 	const user = useSelector(selectUser);
 	const [reply, setReply] = useState('');
+	const [replies, setReplies] = useState<reply[]>([]);
+
+	/** tweetごとにcommentを取得する副作用処理を記述 */
+	useEffect(() => {
+		const repliesCollectionRef = collection(db, 'tweets', tweet.id, 'replies');
+		const q = query(repliesCollectionRef, orderBy('timestamp', 'desc'));
+		const unSub = onSnapshot(q, snapshot => {
+			setReplies(snapshot.docs.map<reply>(doc => {
+				return {
+					id: doc.id,
+					avatar: doc.data().avatar,
+					text: doc.data().text,
+					timestamp: doc.data().timestamp,
+					username: doc.data().userName,
+				};
+			}));
+		});
+		return unSub;
+	}, [tweet.id]);
+
 
 	const newReply = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
@@ -54,6 +82,18 @@ export const TweetListItem = ({ tweet }: props) => {
 					<img src={tweet.image} alt="tweet" />
 				</div>
 			)}
+
+			{replies.map(reply => {
+				return <div className={styles.post_comment} key={reply.id}>
+					<Avatar src={reply.avatar} />
+					<span className={styles.post_commentUser}>@{reply.username}</span>
+					<span className={styles.post_commentText}>{reply.text}</span>
+					<span className={styles.post_headerTime}>
+						{reply.timestamp?.toDate().toDateString()}
+					</span>
+				</div>
+			})}
+
 			<form onSubmit={newReply}>
 				<div className={styles.post_form}>
 					<TextField
