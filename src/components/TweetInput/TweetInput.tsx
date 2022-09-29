@@ -59,7 +59,6 @@ export const TweetInput = () => {
 				timestamp: serverTimestamp(),
 				userName: user.displayName
 			})
-				.then(() => { console.log('done') })
 				.catch(err => { console.log(err) });
 		}
 
